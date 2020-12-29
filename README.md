@@ -11,7 +11,7 @@ requrements:
 ## instalation 
 
 ```
-get clone https://github.com/ruslansvs2/azfwsearchrules.git
+get clone https://github.com/ruslansvs2/AzureFirewall-SearchRules.git 
 
 pip3 install json argparse ipaddress
 
@@ -22,7 +22,7 @@ yum -y install python3-json python3-argparse python3-json python3-ipaddress
 apt -y install python3-json python3-argparse python3-json python3-ipaddress
 
 
-cd azfwsearchrules; cp azfs-search /usr/sbin/
+cd AzureFirewall-SearchRules; cp azfs-search /usr/sbin/
 
 
 ```

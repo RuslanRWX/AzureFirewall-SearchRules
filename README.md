@@ -1,4 +1,6 @@
-# azfw-search - search rules in Azure Firewall Service 
+# azfw-search
+
+### azfw-search - search rules in Azure Firewall Service 
 
 requrements:
 

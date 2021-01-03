@@ -22,7 +22,7 @@ yum -y install python3-json python3-argparse python3-json python3-ipaddress
 apt -y install python3-json python3-argparse python3-json python3-ipaddress
 
 
-cd AzureFirewall-SearchRules; cp azfs-search /usr/sbin/
+cd AzureFirewall-SearchRules; cp azfs-search /usr/bin/
 
 
 ```

@@ -112,7 +112,8 @@ def args_error(args):
         print("""
              ERROR
              File error, maybe you have to creat json file\n
-             try to run: az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
+             try to run: az login
+                         az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
                 """)
         return False
 

@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
 # azfw-search
-# The script can help to find rule in Azure Firewall 
+# The script can help to find rule in Azure Firewall
 # Copyright (c) 2019 by Ruslan Variushkin, ruslansvs2@yandex.ua
-VERSION = "v0.01.02"
-
-import json
-import sys
-import re
-import argparse 
-from ipaddress import IPv4Address, IPv4Network
+import argparse
 from pathlib import Path
-
+from ipaddress import IPv4Address, IPv4Network
+import re
+import sys
+import json
+VERSION = "v0.01.02"
 
 
 def match_ip(ip, net):
     #print("net ", net)
-    if ip == None:
+    if ip is None:
         return True
     elif str("*") in net:
         return True
-    elif [ n for n in net if re.match("[a-z]|[A-Z]", n)]:
+    elif [n for n in net if re.match("[a-z]|[A-Z]", n)]:
         if SERVICE_TAG:
             return True
         else:
@@ -34,26 +32,25 @@ def match_ip(ip, net):
 
 
 def match_port(Dport, ports):
-#    if "*" not in ports:
-#        print([ int(p) for p in ports if (str("-") not in p)])
-    if Dport == None or "*" in ports:
+    #    if "*" not in ports:
+    #        print([ int(p) for p in ports if (str("-") not in p)])
+    if Dport is None or "*" in ports:
         return True
     elif str(Dport) in ports:
         return True
     else:
         for range_ports in ports:
-            if re.search( "-", str([ i for i in range_ports])):
-                data=range_ports.split("-")
+            if re.search("-", str([i for i in range_ports])):
+                data = range_ports.split("-")
                 if int(Dport) >= int(data[0]) and int(Dport) <= int(data[1]):
                     return True
                 else:
                     return False
-    #return False
-
+    # return False
 
 
 def output(name, data_rule):
-    Set_name =  "Set of Rules: ", name
+    Set_name = "Set of Rules: ", name
     Rule_name = "Rule name: ", *data_rule["name"]
     Source_ip = "Source IP:  ", *data_rule["sourceAddresses"]
     Destination_ip = "Destination IP: ", *data_rule["destinationAddresses"]
@@ -61,40 +58,38 @@ def output(name, data_rule):
     Protocol = "Protocol: ", *data_rule["protocols"]
     #Data = str(Set_name)+" "+str(Source_ip)+" "+str(Destination_port)
     #Request="your request:\n source IP addess: ",Sip," destanation IP addess: ",Dip," destanation port: ",Dport
-    #return name," ",Source_ip," ",Destination_ip," ",Destination_port
+    # return name," ",Source_ip," ",Destination_ip," ",Destination_port
     print("===========================\n")
-    print (*Set_name)
-    print (*Source_ip)
-    print (*Destination_ip)
-    print (*Destination_port)
-    print (*Protocol)
-    print ("\n")
+    print(*Set_name)
+    print(*Source_ip)
+    print(*Destination_ip)
+    print(*Destination_port)
+    print(*Protocol)
+    print("\n")
     #table.append([Set_name, Source_ip])
-    #print(Data)
-    
+    # print(Data)
+
 
 def match_proto(protocol, protocols):
     if protocol in protocols:
         return True
-    elif protocol == None:
+    elif protocol is None:
         return True
     else:
         return False
 
 
-def match(all_rules, Sip=None, 
-          Dip=None, Dport=None, 
+def match(all_rules, Sip=None,
+          Dip=None, Dport=None,
           protocol=None):
     for rule_set in all_rules:
         for rule in rule_set["rules"]:
             if (match_port(Dport, rule["destinationPorts"]) and
                 match_ip(Sip, rule["sourceAddresses"]) and
                 match_ip(Dip, rule["destinationAddresses"]) and
-                match_proto(protocol, rule["protocols"])):
+                    match_proto(protocol, rule["protocols"])):
                 output(rule_set["name"], rule)
     return
-
-
 
 
 def open_read_file(file, args):
@@ -120,8 +115,8 @@ def args_error(args):
              try to run: az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
                 """)
         return False
-    
-    return True 
+
+    return True
 
 
 def main():
@@ -131,18 +126,21 @@ def main():
     parser.add_argument("-d", "--destanation-ip",
                         help="A destanation IP address")
     parser.add_argument("-p", "--destanation-port",
-                        help="A destanation port") 
+                        help="A destanation port")
     parser.add_argument("-P", "-proto", "--protocol",
                         help="protocol")
-    parser.add_argument("-f", "--file",
-                        help="A data file, the default file is fwdata.json", default="fwdata.json")
+    parser.add_argument(
+        "-f",
+        "--file",
+        help="A data file, the default file is fwdata.json",
+        default="fwdata.json")
     parser.add_argument("-tag", "--tag",
                         help="Service tags, example: -tag yes", default=None)
     parser.add_argument("-v", "--version", action='store_true')
     args = parser.parse_args()
-    
+
     global SERVICE_TAG
-    SERVICE_TAG = args.tag 
+    SERVICE_TAG = args.tag
     if args.version:
         print("azfw-search version: ", VERSION)
         return
@@ -151,8 +149,5 @@ def main():
         files_loop(args)
 
 
-
 if __name__ == "__main__":
     main()
-
-

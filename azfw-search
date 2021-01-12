@@ -8,7 +8,7 @@ from ipaddress import IPv4Address, IPv4Network
 import re
 import sys
 import json
-VERSION = "v0.01.02"
+VERSION = "v0.01.03"
 
 
 def match_ip(ip, net):
@@ -50,7 +50,7 @@ def match_port(Dport, ports):
 
 
 def output(name, data_rule):
-    Set_name = "Set of Rules: ", name
+    Set_name = "Rule sets: ", name
     Rule_name = "Rule name: ", data_rule["name"]
     Source_ip = "Source IP:  ", *data_rule["sourceAddresses"]
     Destination_ip = "Destination IP: ", *data_rule["destinationAddresses"]

@@ -12,7 +12,7 @@ VERSION = "v0.01.03"
 
 
 def match_ip(ip, net):
-    print("net ", net)
+#    print("net ", net)
     if ip is None:
         return True
     elif str("*") in net:
@@ -24,7 +24,6 @@ def match_ip(ip, net):
             return False
     else:
         for subnet in net:
-            print(subnet)
             if IPv4Address(ip) in IPv4Network(subnet):
                 return True
     return False

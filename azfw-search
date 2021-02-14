@@ -8,7 +8,7 @@ from ipaddress import IPv4Address, IPv4Network
 import re
 import sys
 import json
-VERSION = "v0.01.03"
+VERSION = "v0.01.04"
 
 
 def match_ip(ip, net):

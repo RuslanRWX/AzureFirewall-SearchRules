@@ -138,7 +138,8 @@ def args_error(args):
              ERROR
              File error, maybe you have to creat json file\n
              try to run: az login
-                         az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
+                         for network rule collection: az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
+                         for applicaion rule collection: az network firewall applicaion-rule collection list -g GroupName -f FirewallName > fwdata.app.json
                 """)
         return False
 
@@ -164,8 +165,8 @@ def main():
                         help="Service tags, example: -tag yes", default=None)
     parser.add_argument("-v", "--version", action='store_true')
     parser.add_argument("-m", "--module", default='network',
-                        help="firwall rule collection module, flags: network (short n) and application (short a). \
-                        Defaul value is netowrk")
+                        help="firewall rule collection module, flags: network (short n) and application (short a). \
+                        Default value is network")
     args = parser.parse_args()
 
     global SERVICE_TAG

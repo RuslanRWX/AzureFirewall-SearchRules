@@ -28,7 +28,7 @@ yum -y install python3-json python3-argparse python3-json python3-ipaddress
 apt -y install python3-json python3-argparse python3-json python3-ipaddress
 
 get clone https://github.com/ruslansvs2/AzureFirewall-SearchRules.git 
-cd tietoevry-azure-bonet-scripts/AzureFirewall-SearchRules; cp azfs-search /usr/bin/
+cd AzureFirewall-SearchRules; cp azfs-search /usr/bin/
 
 
 ```

@@ -2,17 +2,21 @@
 # azfw-search
 # The script can help to find rule in Azure Firewall
 # Copyright (c) 2019 by Ruslan Variushkin, ruslansvs2@yandex.ua
+
 import argparse
 from pathlib import Path
 from ipaddress import IPv4Address, IPv4Network
 import re
 import sys
 import json
-VERSION = "v0.01.04"
+VERSION = "v0.02.04"
 
 
 def match_ip(ip, net):
-#    print("net ", net)
+    """Match function.
+      ip  - IP address 
+      net - network
+    """
     if ip is None:
         return True
     elif str("*") in net:
@@ -30,8 +34,6 @@ def match_ip(ip, net):
 
 
 def match_port(Dport, ports):
-    #    if "*" not in ports:
-    #        print([ int(p) for p in ports if (str("-") not in p)])
     if Dport is None or "*" in ports:
         return True
     elif str(Dport) in ports:
@@ -52,7 +54,7 @@ def output_applicaion(name, data_rule):
     Set_name = "Rule sets: ", name
     Rule_name = "Rule name: ", data_rule["name"]
     Source_ip = "Source IP:  ", *data_rule["sourceAddresses"]
-    Port_protocol = "Port and Protocal:  ", port
+    Port_protocol = "Port and Protocol:  ", port
     Target_fqdns = "Target FQDNs: ", *data_rule["targetFqdns"]
     fqdn_tags = "Service tag: ", *data_rule["fqdnTags"]
     #Destination_port = "PORT: ", *data_rule["port"]
@@ -69,16 +71,13 @@ def output_applicaion(name, data_rule):
     #print(*Destination_port)
     print("\n")
 
-def output(name, data_rule):
+def output_network(name, data_rule):
     Set_name = "Rule sets: ", name
     Rule_name = "Rule name: ", data_rule["name"]
     Source_ip = "Source IP:  ", *data_rule["sourceAddresses"]
     Destination_ip = "Destination IP: ", *data_rule["destinationAddresses"]
     Destination_port = "Destination PORT: ", *data_rule["destinationPorts"]
     Protocol = "Protocol: ", *data_rule["protocols"]
-    #Data = str(Set_name)+" "+str(Source_ip)+" "+str(Destination_port)
-    #Request="your request:\n source IP addess: ",Sip," destanation IP addess: ",Dip," destanation port: ",Dport
-    # return name," ",Source_ip," ",Destination_ip," ",Destination_port
     print("===========================\n")
     print(*Set_name)
     print(*Rule_name)
@@ -87,8 +86,6 @@ def output(name, data_rule):
     print(*Destination_port)
     print(*Protocol)
     print("\n")
-    #table.append([Set_name, Source_ip])
-    # print(Data)
 
 
 def match_proto(protocol, protocols):
@@ -99,21 +96,44 @@ def match_proto(protocol, protocols):
     else:
         return False
 
+def match_name(search_name, name):
+#    print(search_name)
+    if search_name is None:
+#        print("True")
+        return True
+    elif re.findall(search_name, name, re.IGNORECASE):
+#        print("True")
+        return True
+    else:
+#        print("False")
+        return False
+
+
+def output(name, rule):
+    if (FIREWALL_MODULE == "network" or FIREWALL_MODULE == "n"):
+        output_network(name, rule)
+    else:
+        output_applicaion(name, rule)
 
 def match(all_rules, Sip=None,
           Dip=None, Dport=None,
-          protocol=None):
+          protocol=None, name_set=None,
+          name=None):
     for rule_set in all_rules:
         for rule in rule_set["rules"]:
             if  ((FIREWALL_MODULE == "network" or FIREWALL_MODULE == "n") and
                 match_port(Dport, rule["destinationPorts"]) and
-                match_ip(Sip, rule["sourceAddresses"]) and
+                match_ip(Sip, rule["sourceAddresses"])      and
                 match_ip(Dip, rule["destinationAddresses"]) and
-                    match_proto(protocol, rule["protocols"])):
+                match_proto(protocol, rule["protocols"])    and 
+                match_name(name_set, rule_set["name"])      and 
+                               match_name(name, rule["name"])):
                 output(rule_set["name"], rule)
             elif  ((FIREWALL_MODULE == "application" or FIREWALL_MODULE == "a") and
-                match_ip(Sip, rule["sourceAddresses"])):
-                output_applicaion(rule_set["name"], rule)
+                match_ip(Sip, rule["sourceAddresses"]) and 
+                match_name(name_set, rule_set["name"]) and
+                          match_name(name, rule["name"])):
+                output(rule_set["name"], rule)
     return
 
 
@@ -124,7 +144,9 @@ def open_read_file(file, args):
               args.source_ip,
               args.destanation_ip,
               args.destanation_port,
-              args.protocol)
+              args.protocol,
+              args.name_set,
+              args.name)
 
 
 def files_loop(args):
@@ -138,8 +160,7 @@ def args_error(args):
              ERROR
              File error, maybe you have to creat json file\n
              try to run: az login
-                         for network rule collection: az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
-                         for applicaion rule collection: az network firewall applicaion-rule collection list -g GroupName -f FirewallName > fwdata.app.json
+                         az network firewall network-rule collection list -g GroupName -f FirewallName > fwdata.json
                 """)
         return False
 
@@ -156,6 +177,10 @@ def main():
                         help="A destanation port")
     parser.add_argument("-P", "-proto", "--protocol",
                         help="protocol")
+    parser.add_argument("-ns", "-name_set", "--name_set",
+                        help="Search rule set name, put regular expression")
+    parser.add_argument("-n", "-name", "--name",
+                        help="Search rule name, put regular expression")
     parser.add_argument(
         "-f",
         "--file",

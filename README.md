@@ -1,6 +1,13 @@
 # azfw-search
 
 ### azfw-search - search rules in Azure Firewall Service 
+filter features:
+- searching by destanation port
+- searching by source/destanation IP address 
+- searching by rule name sets and rule name
+- searching by protocal 
+- searching in network and application rule sets
+- searching by service tag
 
 requrements:
 
@@ -11,9 +18,8 @@ requrements:
 ## instalation 
 
 ```
-get clone https://github.com/ruslansvs2/AzureFirewall-SearchRules.git 
 
-pip3 install json argparse ipaddress
+pip3 install argparse ipaddress
 
 #or
 # for RedHat 
@@ -21,8 +27,8 @@ yum -y install python3-json python3-argparse python3-json python3-ipaddress
 # for Debian like destributuions 
 apt -y install python3-json python3-argparse python3-json python3-ipaddress
 
-
-cd AzureFirewall-SearchRules; cp azfs-search /usr/bin/
+get clone https://github.com/ruslansvs2/AzureFirewall-SearchRules.git 
+cd tietoevry-azure-bonet-scripts/AzureFirewall-SearchRules; cp azfs-search /usr/bin/
 
 
 ```
@@ -44,8 +50,9 @@ az network firewall network-rule collection list -g GroupName   -f FirewallName 
 print help instruction 
 
 ```
-./azfw-search -h
-usage: azfw-search.py [-h] [-s SOURCE_IP] [-d DESTANATION_IP] [-p DESTANATION_PORT] [-P PROTOCOL] [-f FILE] [-tag TAG]
+azfw-search  -h
+usage: azfw-search.py [-h] [-s SOURCE_IP] [-d DESTANATION_IP] [-p DESTANATION_PORT] [-P PROTOCOL] [-ns NAME_SET] [-n NAME]
+                      [-f FILE] [-tag TAG] [-v] [-m MODULE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -57,8 +64,16 @@ optional arguments:
                         A destanation port
   -P PROTOCOL, -proto PROTOCOL, --protocol PROTOCOL
                         protocol
+  -ns NAME_SET, -name_set NAME_SET, --name_set NAME_SET
+                        Search rule set name, put regular expression
+  -n NAME, -name NAME, --name NAME
+                        Search rule name, put regular expression
   -f FILE, --file FILE  A data file, the default file is fwdata.json
   -tag TAG, --tag TAG   Service tags, example: -tag yes
+  -v, --version
+  -m MODULE, --module MODULE
+                        firewall rule collection module, flags: network (short n) and application (short a). Default value is
+                        network
 
 ```
 
@@ -83,6 +98,20 @@ Source IP:   192.168.0.0/24
 Destination IP:  10.0.0.0/20
 Destination PORT:  80 443
 Protocol:  TCP
+```
+
+
+4. Search application rule sets by name
+```
+azfw-search  -f fwdata.app.json  -ns let -m application
+===========================
+
+Rule sets:  PLT-EG_letsencript
+Rule name:  fqdn_qualys_platform: https
+Source IP:   10.10.10.0/19 10.20.20.0/19
+Port and Protocol:   443
+Target FQDNs:  *.api.letsencrypt.org
+Service tag: 
 
 
 ```

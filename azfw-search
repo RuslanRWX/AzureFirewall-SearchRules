@@ -3,13 +3,74 @@
 # The script can help to find rule in Azure Firewall
 # Copyright (c) 2019 by Ruslan Variushkin, ruslansvs2@yandex.ua
 
+
 import argparse
 from pathlib import Path
 from ipaddress import IPv4Address, IPv4Network
 import re
 import sys
 import json
-VERSION = "v0.02.04"
+VERSION = "v0.04.02"
+
+
+
+class output:
+    def __init__(self, name, rule):
+        self.name = name
+        self.rule = rule
+
+#    def create_excel_file():
+#        import xlwt
+
+    def output_net(self):
+        self.Set_name = "Rule sets: ", self.name
+        self.Rule_name = "Rule name: ", self.rule["name"]
+        self.Source_ip = "Source IP:  ", *self.rule["sourceAddresses"]
+        self.Destination_ip = "Destination IP: ", *self.rule["destinationAddresses"]
+        self.Destination_fqdn = "Destination FQDN: ", *self.rule["destinationFqdns"]
+        self.Destination_port = "Destination PORT: ", *self.rule["destinationPorts"]
+        self.Protocol = "Protocol: ", *self.rule["protocols"]
+#        if EXCEL_FILE is not None:
+#            return()
+#        else:
+        return(self.output_network())
+
+    def output_app(self):
+        self.port=None
+        self.proto=None
+        for s in self.rule["protocols"]: self.port, self.proto = s["port"], s["protocolType"]
+        self.Set_name = "Rule sets: ", self.name
+        self.Rule_name = "Rule name: ", self.rule["name"]
+        self.Source_ip = "Source IP:  ", *self.rule["sourceAddresses"]
+        self.Port = "Port :  ", self.port
+        self.Protocol = "Protocol:  ", self.proto
+        self.Target_fqdns = "Target FQDNs: ", *self.rule["targetFqdns"]
+        self.fqdn_tags = "Service tag: ", *self.rule["fqdnTags"]
+#        if EXCEL_FILE is not None:
+#            return()
+#        else:
+        return(self.output_applicaion())
+
+    def output_applicaion(self):
+        return("===========================\n", 
+            *self.Set_name,"\n",
+            *self.Rule_name,"\n",
+            *self.Source_ip,"\n",
+            *self.Port,"\n",
+            *self.Protocol,"\n",
+            *self.Target_fqdns,"\n",
+            *self.fqdn_tags,"\n")
+        #print(*Destination_port)
+    
+    def output_network(self):
+        return ("===========================\n",
+            *self.Set_name,"\n",
+            *self.Rule_name,"\n",
+            *self.Source_ip,"\n",
+            *self.Destination_ip,"\n",
+            *self.Destination_fqdn,"\n",
+            *self.Destination_port,"\n",
+            *self.Protocol,"\n")
 
 
 def match_ip(ip, net):
@@ -19,6 +80,8 @@ def match_ip(ip, net):
     """
     if ip is None:
         return True
+    elif re.search(r"[a-z]", ip):
+        match_fqdn(ip, net)
     elif str("*") in net:
         return True
     elif [n for n in net if re.match("[a-z]|[A-Z]", n)]:
@@ -32,6 +95,20 @@ def match_ip(ip, net):
                 return True
     return False
 
+
+def match_fqdn(d_fqdn, fqdn):
+    """Match fqdn function.
+      d_fqdn  - searched domain name
+      fqdn - domain name
+    """
+    if d_fqdn is None:
+        return True
+    else:
+        if [ i for i in fqdn if re.search(d_fqdn, i, re.IGNORECASE) ]:
+            return True
+        else:
+            return False
+    return False
 
 def match_port(Dport, ports):
     if Dport is None or "*" in ports:
@@ -48,46 +125,6 @@ def match_port(Dport, ports):
                     return False
     # return False
 
-def output_applicaion(name, data_rule):
-    port=None
-    for s in data_rule["protocols"]: port=s["port"]
-    Set_name = "Rule sets: ", name
-    Rule_name = "Rule name: ", data_rule["name"]
-    Source_ip = "Source IP:  ", *data_rule["sourceAddresses"]
-    Port_protocol = "Port and Protocol:  ", port
-    Target_fqdns = "Target FQDNs: ", *data_rule["targetFqdns"]
-    fqdn_tags = "Service tag: ", *data_rule["fqdnTags"]
-    #Destination_port = "PORT: ", *data_rule["port"]
-    #Data = str(Set_name)+" "+str(Source_ip)+" "+str(Destination_port)
-    #Request="your request:\n source IP addess: ",Sip," destanation IP addess: ",Dip," destanation port: ",Dport
-    # return name," ",Source_ip," ",Destination_ip," ",Destination_port
-    print("===========================\n")
-    print(*Set_name)
-    print(*Rule_name)
-    print(*Source_ip)
-    print(*Port_protocol)
-    print(*Target_fqdns)
-    print(*fqdn_tags)
-    #print(*Destination_port)
-    print("\n")
-
-def output_network(name, data_rule):
-    Set_name = "Rule sets: ", name
-    Rule_name = "Rule name: ", data_rule["name"]
-    Source_ip = "Source IP:  ", *data_rule["sourceAddresses"]
-    Destination_ip = "Destination IP: ", *data_rule["destinationAddresses"]
-    Destination_port = "Destination PORT: ", *data_rule["destinationPorts"]
-    Protocol = "Protocol: ", *data_rule["protocols"]
-    print("===========================\n")
-    print(*Set_name)
-    print(*Rule_name)
-    print(*Source_ip)
-    print(*Destination_ip)
-    print(*Destination_port)
-    print(*Protocol)
-    print("\n")
-
-
 def match_proto(protocol, protocols):
     if protocol in protocols:
         return True
@@ -96,44 +133,47 @@ def match_proto(protocol, protocols):
     else:
         return False
 
-def match_name(search_name, name):
-#    print(search_name)
-    if search_name is None:
-#        print("True")
+def match_proto_app(protocol, protocols):
+    if protocol is None:
         return True
-    elif re.findall(search_name, name, re.IGNORECASE):
-#        print("True")
+    elif  protocols[0].lower() == protocol.lower():
         return True
     else:
-#        print("False")
         return False
 
-
-def output(name, rule):
-    if (FIREWALL_MODULE == "network" or FIREWALL_MODULE == "n"):
-        output_network(name, rule)
+def match_name(search_name, name):
+    if search_name is None:
+        return True
+    elif re.findall(search_name, name, re.IGNORECASE):
+        return True
     else:
-        output_applicaion(name, rule)
+        return False
 
 def match(all_rules, Sip=None,
           Dip=None, Dport=None,
           protocol=None, name_set=None,
-          name=None):
+          name=None, tag=None):
     for rule_set in all_rules:
         for rule in rule_set["rules"]:
-            if  ((FIREWALL_MODULE == "network" or FIREWALL_MODULE == "n") and
+            if  ((re.search("networkRuleCollections", rule_set["id"])) and
                 match_port(Dport, rule["destinationPorts"]) and
                 match_ip(Sip, rule["sourceAddresses"])      and
-                match_ip(Dip, rule["destinationAddresses"]) and
+                (match_ip(Dip, rule["destinationAddresses"]) or match_fqdn(Dip, rule["destinationFqdns"])) and
                 match_proto(protocol, rule["protocols"])    and 
                 match_name(name_set, rule_set["name"])      and 
-                               match_name(name, rule["name"])):
-                output(rule_set["name"], rule)
-            elif  ((FIREWALL_MODULE == "application" or FIREWALL_MODULE == "a") and
+                match_name(name, rule["name"])):
+                out=output(rule_set["name"], rule)
+                print(*out.output_net())
+            elif  ((re.search("applicationRuleCollections", rule_set["id"])) and
                 match_ip(Sip, rule["sourceAddresses"]) and 
+                match_fqdn(Dip, rule["targetFqdns"]) and
+                match_fqdn(tag, rule["fqdnTags"]) and
+                match_port(Dport, [ str(x["port"]) for x in  rule["protocols"]]) and
+                match_proto_app(protocol, [ str(x["protocolType"]) for x in rule["protocols"]])    and 
                 match_name(name_set, rule_set["name"]) and
-                          match_name(name, rule["name"])):
-                output(rule_set["name"], rule)
+                match_name(name, rule["name"])):
+                out=output(rule_set["name"], rule)
+                print(*out.output_app())
     return
 
 
@@ -146,7 +186,8 @@ def open_read_file(file, args):
               args.destanation_port,
               args.protocol,
               args.name_set,
-              args.name)
+              args.name,
+              args.tag)
 
 
 def files_loop(args):
@@ -172,13 +213,13 @@ def main():
     parser.add_argument("-s", "--source-ip",
                         help="A source IP address")
     parser.add_argument("-d", "--destanation-ip",
-                        help="A destanation IP address")
+                        help="A destanation IP address or FQDN")
     parser.add_argument("-p", "--destanation-port",
                         help="A destanation port")
     parser.add_argument("-P", "-proto", "--protocol",
                         help="protocol")
     parser.add_argument("-ns", "-name_set", "--name_set",
-                        help="Search rule set name, put regular expression")
+                        help="Search rule set name, put regular expression. Example:  azfw-search -f prod.app.json   -d \"\\\*.azure.com\" ")
     parser.add_argument("-n", "-name", "--name",
                         help="Search rule name, put regular expression")
     parser.add_argument(
@@ -187,17 +228,22 @@ def main():
         help="A data file, the default file is fwdata.json",
         default="fwdata.json")
     parser.add_argument("-tag", "--tag",
-                        help="Service tags, example: -tag yes", default=None)
+                        help="Service tags, example: -tag NAME", default=None)
+    parser.add_argument("-ex", "--excel",
+                        help="create excel file, example: --excel network_rules.xlsx", default=None)
     parser.add_argument("-v", "--version", action='store_true')
-    parser.add_argument("-m", "--module", default='network',
-                        help="firewall rule collection module, flags: network (short n) and application (short a). \
-                        Default value is network")
     args = parser.parse_args()
 
     global SERVICE_TAG
     SERVICE_TAG = args.tag
-    global FIREWALL_MODULE
-    FIREWALL_MODULE = args.module
+    EXCEL_FILE = args.excel
+#    print(args.source_ip)
+#    if not re.fullmatch(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", args.source_ip):
+#        print("IP:",args.source_ip)
+#        return False
+#    else:
+#        print("else")
+#        return True
     if args.version:
         print("azfw-search version: ", VERSION)
         return

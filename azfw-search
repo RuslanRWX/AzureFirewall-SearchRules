@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # azfw-search
 # The script can help to find rule in Azure Firewall
-# Copyright (c) 2019 by Ruslan Variushkin, ruslansvs2@yandex.ua
+# Copyright (c) 2019 by Ruslan Variushkin, ruslansvs2@yahoo.com
 
 
 import argparse
@@ -10,14 +10,16 @@ from ipaddress import IPv4Address, IPv4Network
 import re
 import sys
 import json
-VERSION = "v0.04.02"
+VERSION = "v0.04.04"
 
 
 
 class output:
-    def __init__(self, name, rule):
+    def __init__(self, name, rule, action, priority):
         self.name = name
         self.rule = rule
+        self.action = action
+        self.priority = priority
 
 #    def create_excel_file():
 #        import xlwt
@@ -25,11 +27,13 @@ class output:
     def output_net(self):
         self.Set_name = "Rule sets: ", self.name
         self.Rule_name = "Rule name: ", self.rule["name"]
+        self.Priority = "Priority: ", self.priority
         self.Source_ip = "Source IP:  ", *self.rule["sourceAddresses"]
         self.Destination_ip = "Destination IP: ", *self.rule["destinationAddresses"]
         self.Destination_fqdn = "Destination FQDN: ", *self.rule["destinationFqdns"]
         self.Destination_port = "Destination PORT: ", *self.rule["destinationPorts"]
         self.Protocol = "Protocol: ", *self.rule["protocols"]
+        self.Action = "Action: ", self.action["type"]
 #        if EXCEL_FILE is not None:
 #            return()
 #        else:
@@ -41,36 +45,42 @@ class output:
         for s in self.rule["protocols"]: self.port, self.proto = s["port"], s["protocolType"]
         self.Set_name = "Rule sets: ", self.name
         self.Rule_name = "Rule name: ", self.rule["name"]
+        self.Priority = "Priority: ", self.priority
         self.Source_ip = "Source IP:  ", *self.rule["sourceAddresses"]
         self.Port = "Port :  ", self.port
         self.Protocol = "Protocol:  ", self.proto
         self.Target_fqdns = "Target FQDNs: ", *self.rule["targetFqdns"]
         self.fqdn_tags = "Service tag: ", *self.rule["fqdnTags"]
+        self.Action = "Action: ", self.action["type"]
 #        if EXCEL_FILE is not None:
 #            return()
 #        else:
         return(self.output_applicaion())
 
     def output_applicaion(self):
-        return("===========================\n", 
+        return("="*33+"\n", 
             *self.Set_name,"\n",
             *self.Rule_name,"\n",
+            *self.Priority,"\n",
             *self.Source_ip,"\n",
             *self.Port,"\n",
             *self.Protocol,"\n",
             *self.Target_fqdns,"\n",
-            *self.fqdn_tags,"\n")
+            *self.fqdn_tags,"\n",
+            *self.Action,"\n")
         #print(*Destination_port)
     
     def output_network(self):
-        return ("===========================\n",
+        return ("="*33+"\n",
             *self.Set_name,"\n",
             *self.Rule_name,"\n",
+            *self.Priority,"\n",
             *self.Source_ip,"\n",
             *self.Destination_ip,"\n",
             *self.Destination_fqdn,"\n",
             *self.Destination_port,"\n",
-            *self.Protocol,"\n")
+            *self.Protocol,"\n",
+            *self.Action,"\n")
 
 
 def match_ip(ip, net):
@@ -162,7 +172,7 @@ def match(all_rules, Sip=None,
                 match_proto(protocol, rule["protocols"])    and 
                 match_name(name_set, rule_set["name"])      and 
                 match_name(name, rule["name"])):
-                out=output(rule_set["name"], rule)
+                out=output(rule_set["name"], rule, rule_set["action"], rule_set["priority"])
                 print(*out.output_net())
             elif  ((re.search("applicationRuleCollections", rule_set["id"])) and
                 match_ip(Sip, rule["sourceAddresses"]) and 
@@ -172,7 +182,7 @@ def match(all_rules, Sip=None,
                 match_proto_app(protocol, [ str(x["protocolType"]) for x in rule["protocols"]])    and 
                 match_name(name_set, rule_set["name"]) and
                 match_name(name, rule["name"])):
-                out=output(rule_set["name"], rule)
+                out=output(rule_set["name"], rule, rule_set["action"], rule_set["priority"])
                 print(*out.output_app())
     return
 
